@@ -5,18 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Photobooth Web</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #f0f0f0; }
-        #video { border: 2px solid #000; width: 480px; height: 360px; transform: scaleX(-1); }
-        #canvas { display: none; width: 480px; height: 360px; }
-        #photo-strip { margin-top: 20px; border: 10px solid #fff; }
-        #controls { margin: 20px; }
-        .filter-btn, .frame-color, .sticker-btn, .layout-btn { 
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background: #f0f0f0; 
+            margin: 0; 
             padding: 10px; 
-            margin: 5px; 
+        }
+        #video { 
+            border: 2px solid #000; 
+            width: 100%; 
+            max-width: 480px; 
+            height: auto; 
+            transform: scaleX(-1); 
+            display: block; 
+            margin: 0 auto; 
+        }
+        #canvas { 
+            display: none; 
+            width: 100%; 
+            max-width: 480px; 
+            height: auto; 
+        }
+        #photo-strip { 
+            margin-top: 20px; 
+            border: 10px solid #fff; 
+            width: 100%; 
+            max-width: 480px; 
+        }
+        #photo-strip-container { 
+            margin-top: 20px; 
+            display: flex; 
+            justify-content: center; 
+        }
+        #controls { 
+            margin: 20px 0; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+        }
+        .filter-btn, .frame-color, .sticker-btn, .layout-btn { 
+            padding: 8px; 
+            margin: 3px; 
             cursor: pointer; 
             border: 2px solid transparent; 
             border-radius: 5px; 
             transition: all 0.3s ease; 
+            font-size: 14px; 
         }
         .filter-btn:hover, .frame-color:hover, .sticker-btn:hover, .layout-btn:hover { 
             background: #ddd; 
@@ -28,48 +63,65 @@
             box-shadow: 0 0 15px rgba(255, 0, 0, 0.7), 0 0 25px rgba(255, 0, 0, 0.4); 
         }
         .frame-color { 
-            width: 30px; 
-            height: 30px; 
+            width: 25px; 
+            height: 25px; 
             display: inline-block; 
         }
-        #photo-strip-container { 
-            margin-top: 20px; 
-            display: flex; 
-            justify-content: center; 
-        }
-        #retake, #download { 
-            display: none; 
+        #retake, #download, #save, #snap { 
             padding: 10px; 
             margin: 5px; 
             cursor: pointer; 
             border: none; 
             border-radius: 5px; 
+            font-size: 16px; 
         }
+        #snap { background: #2196F3; color: white; }
+        #snap:hover { background: #1976D2; }
         #retake { 
+            display: none; 
             background: #ff4444; 
             color: white; 
         }
-        #retake:hover { 
-            background: #cc0000; 
-        }
+        #retake:hover { background: #cc0000; }
+        #save { background: #FF9800; color: white; }
+        #save:hover { background: #F57C00; }
         #download { 
+            display: none; 
             background: #4CAF50; 
             color: white; 
         }
-        #download:hover { 
-            background: #45a049; 
+        #download:hover { background: #45a049; }
+
+        /* Responsive design cho điện thoại */
+        @media (max-width: 600px) {
+            h1 { font-size: 24px; }
+            h3 { font-size: 16px; }
+            .filter-btn, .frame-color, .sticker-btn, .layout-btn { 
+                padding: 6px; 
+                font-size: 12px; 
+            }
+            #snap, #retake, #save, #download { 
+                padding: 8px; 
+                font-size: 14px; 
+            }
+            #video, #canvas, #photo-strip { 
+                max-width: 100%; 
+                height: auto; 
+            }
         }
     </style>
 </head>
 <body>
     <h1>Photobooth</h1>
-    <video id="video" autoplay></video>
+    <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
     <div id="controls">
-        <button id="snap" disabled>Chụp ảnh</button>
-        <button id="retake">Chụp lại</button>
-        <button id="save">Lưu ảnh ghép</button>
-        <button id="download">Tải ảnh xuống</button>
+        <div>
+            <button id="snap" disabled>Chụp ảnh</button>
+            <button id="retake">Chụp lại</button>
+            <button id="save">Lưu ảnh ghép</button>
+            <button id="download">Tải ảnh xuống</button>
+        </div>
         <div>
             <h3>Chọn Layout</h3>
             <button class="layout-btn" onclick="setLayout(4, 2)">4x2</button>
@@ -125,14 +177,23 @@
         let sticker = 'none';
         let rows = 0;
         let cols = 0;
-        let isLayoutSelected = false;
-        let stream = null;
 
         async function startWebcam() {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const constraints = { 
+                    video: { 
+                        width: { ideal: 480 }, 
+                        height: { ideal: 360 }, 
+                        facingMode: 'user' 
+                    } 
+                };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
-                video.play();
+                video.onloadedmetadata = () => {
+                    video.play();
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                };
             } catch (err) {
                 console.error('Không thể truy cập webcam:', err);
                 alert('Không thể truy cập webcam: ' + err.message);
@@ -161,7 +222,6 @@
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             ctx.restore();
 
-            // Nhận diện khuôn mặt và thêm sticker
             if (sticker !== 'none') {
                 const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
                 if (detections.length > 0) {
@@ -175,7 +235,6 @@
                 }
             }
 
-            // Áp dụng filter
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             for (let i = 0; i < imageData.data.length; i += 4) {
                 let r = imageData.data[i];
@@ -237,29 +296,8 @@
 
         document.getElementById('save').addEventListener('click', () => {
             if (photos.length === 0) return;
-            const stripCanvas = document.createElement('canvas');
-            const photoWidth = 240;
-            const photoHeight = 180;
-            stripCanvas.width = photoWidth * cols;
-            stripCanvas.height = photoHeight * rows;
-            const stripCtx = stripCanvas.getContext('2d');
-
-            stripCtx.fillStyle = frameColor;
-            stripCtx.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
-
-            photos.forEach((photo, index) => {
-                const img = new Image();
-                img.src = photo;
-                img.onload = () => {
-                    const row = Math.floor(index / cols);
-                    const col = index % cols;
-                    stripCtx.drawImage(img, col * photoWidth, row * photoHeight, photoWidth, photoHeight);
-                    if (index === photos.length - 1) {
-                        photoStrip.src = stripCanvas.toDataURL();
-                        downloadButton.style.display = 'inline-block';
-                    }
-                };
-            });
+            updatePhotoStrip();
+            downloadButton.style.display = 'inline-block';
         });
 
         downloadButton.addEventListener('click', () => {
@@ -271,8 +309,8 @@
 
         function updatePhotoStrip() {
             const stripCanvas = document.createElement('canvas');
-            const photoWidth = 240;
-            const photoHeight = 180;
+            const photoWidth = Math.min(240, window.innerWidth * 0.8 / cols);
+            const photoHeight = photoWidth * 0.75;
             stripCanvas.width = photoWidth * cols;
             stripCanvas.height = photoHeight * rows;
             const stripCtx = stripCanvas.getContext('2d');
@@ -292,6 +330,14 @@
             });
 
             if (photos.length === 0) {
+                stripCtx.lineWidth = 4;
+                stripCtx.strokeStyle = '#ff0000';
+                stripCtx.strokeRect(0, 0, stripCanvas.width, stripCanvas.height);
+                photoStrip.src = stripCanvas.toDataURL();
+            } else {
+                stripCtx.lineWidth = 4;
+                stripCtx.strokeStyle = '#ff0000';
+                stripCtx.strokeRect(0, 0, stripCanvas.width, stripCanvas.height);
                 photoStrip.src = stripCanvas.toDataURL();
             }
         }
@@ -300,7 +346,6 @@
             rows = newRows;
             cols = newCols;
             photos = [];
-            isLayoutSelected = true;
             document.getElementById('snap').disabled = false;
             updatePhotoStrip();
             updateButtonSelection('layout-btn', `${rows}x${cols}`);
@@ -328,6 +373,15 @@
                 if (btn.getAttribute('onclick').includes(value)) {
                     btn.classList.add('selected');
                 }
+            });
+        }
+
+        // Kiểm tra thiết bị và tối ưu hóa
+        if (/Mobi|Android|iPhone|iPad/.test(navigator.userAgent)) {
+            document.body.style.padding = '5px';
+            document.querySelectorAll('button').forEach(btn => {
+                btn.style.width = 'auto';
+                btn.style.minWidth = '60px';
             });
         }
     </script>
