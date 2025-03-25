@@ -27,16 +27,21 @@
             max-width: 480px; 
             height: auto; 
         }
-        #photo-strip { 
+        #photo-strip-4x2, #photo-strip-6x2, #photo-strip-8x2 { 
             margin-top: 20px; 
             border: 10px solid #fff; 
             width: 100%; 
             max-width: 480px; 
+            transition: all 0.3s ease; 
+            display: none; 
         }
         #photo-strip-container { 
             margin-top: 20px; 
             display: flex; 
             justify-content: center; 
+        }
+        .photo-strip.selected { 
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.7), 0 0 25px rgba(255, 0, 0, 0.4); 
         }
         #controls { 
             margin: 20px 0; 
@@ -56,18 +61,27 @@
         .filter-btn:hover, .frame-color:hover, .sticker-btn:hover, .layout-btn:hover { 
             background: #ddd; 
         }
-        .selected { 
+        .layout-btn.selected, .filter-btn.selected, .frame-color.selected, .sticker-btn.selected { 
             border: 2px solid #ff0000; 
             background: #e0e0e0; 
             font-weight: bold; 
             box-shadow: 0 0 15px rgba(255, 0, 0, 0.7), 0 0 25px rgba(255, 0, 0, 0.4); 
+            transform: scale(1.1); 
+        }
+        .layout-btn { 
+            animation: pulse 1.5s infinite; 
+        }
+        @keyframes pulse { 
+            0% { transform: scale(1); } 
+            50% { transform: scale(1.05); } 
+            100% { transform: scale(1); } 
         }
         .frame-color { 
             width: 25px; 
             height: 25px; 
             display: inline-block; 
         }
-        #retake, #download, #save, #snap { 
+        #retake, #download, #save, #snap, #reset-layout { 
             padding: 10px; 
             margin: 5px; 
             cursor: pointer; 
@@ -91,6 +105,18 @@
             color: white; 
         }
         #download:hover { background: #45a049; }
+        #reset-layout { 
+            display: none; 
+            background: #9c27b0; 
+            color: white; 
+        }
+        #reset-layout:hover { background: #7b1fa2; }
+        #layout-selection { 
+            display: block; 
+        }
+        #main-controls { 
+            display: none; 
+        }
 
         /* Responsive design cho điện thoại */
         @media (max-width: 600px) {
@@ -100,11 +126,11 @@
                 padding: 6px; 
                 font-size: 12px; 
             }
-            #snap, #retake, #save, #download { 
+            #snap, #retake, #save, #download, #reset-layout { 
                 padding: 8px; 
                 font-size: 14px; 
             }
-            #video, #canvas, #photo-strip { 
+            #video, #canvas, .photo-strip { 
                 max-width: 100%; 
                 height: auto; 
             }
@@ -116,51 +142,56 @@
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
     <div id="controls">
-        <div>
-            <button id="snap" disabled>Chụp ảnh</button>
-            <button id="retake">Chụp lại</button>
-            <button id="save">Lưu ảnh ghép</button>
-            <button id="download">Tải ảnh xuống</button>
-        </div>
-        <div>
+        <div id="layout-selection">
             <h3>Chọn Layout</h3>
             <button class="layout-btn" onclick="setLayout(4, 2)">4x2</button>
             <button class="layout-btn" onclick="setLayout(6, 2)">6x2</button>
             <button class="layout-btn" onclick="setLayout(8, 2)">8x2</button>
         </div>
-        <div>
-            <h3>Chọn Filter</h3>
-            <button class="filter-btn" onclick="setFilter('none')">Không filter</button>
-            <button class="filter-btn" onclick="setFilter('grayscale')">Đen trắng</button>
-            <button class="filter-btn" onclick="setFilter('sepia')">Sepia</button>
-            <button class="filter-btn" onclick="setFilter('vibrant')">Rực rỡ</button>
-            <button class="filter-btn" onclick="setFilter('warm')">Ấm</button>
-            <button class="filter-btn" onclick="setFilter('cool')">Mát mẻ</button>
-            <button class="filter-btn" onclick="setFilter('retro')">Retro</button>
-            <button class="filter-btn" onclick="setFilter('dreamy')">Mơ màng</button>
-            <button class="filter-btn" onclick="setFilter('invert')">Đảo màu</button>
-        </div>
-        <div>
-            <h3>Chọn màu khung</h3>
-            <button class="frame-color" style="background: white;" onclick="setFrameColor('white')"></button>
-            <button class="frame-color" style="background: pink;" onclick="setFrameColor('pink')"></button>
-            <button class="frame-color" style="background: blue;" onclick="setFrameColor('blue')"></button>
-            <button class="frame-color" style="background: yellow;" onclick="setFrameColor('yellow')"></button>
-            <button class="frame-color" style="background: green;" onclick="setFrameColor('green')"></button>
-        </div>
-        <div>
-            <h3>Chọn Sticker</h3>
-            <button class="sticker-btn" onclick="setSticker('none')">Không sticker</button>
-            <button class="sticker-btn" onclick="setSticker('😺')">Mèo</button>
-            <button class="sticker-btn" onclick="setSticker('👑')">Vương miện</button>
-            <button class="sticker-btn" onclick="setSticker('🌟')">Ngôi sao</button>
-            <button class="sticker-btn" onclick="setSticker('🐻')">Gấu bự</button>
-            <button class="sticker-btn" onclick="setSticker('🐰')">Tai thỏ</button>
-            <button class="sticker-btn" onclick="setSticker('❤️')">Trái tim</button>
+        <div id="main-controls">
+            <div>
+                <button id="snap" disabled>Chụp ảnh</button>
+                <button id="retake">Chụp lại</button>
+                <button id="save">Lưu ảnh ghép</button>
+                <button id="download">Tải ảnh xuống</button>
+                <button id="reset-layout">Chọn lại</button>
+            </div>
+            <div>
+                <h3>Chọn Filter</h3>
+                <button class="filter-btn" onclick="setFilter('none')">Không filter</button>
+                <button class="filter-btn" onclick="setFilter('grayscale')">Đen trắng</button>
+                <button class="filter-btn" onclick="setFilter('sepia')">Sepia</button>
+                <button class="filter-btn" onclick="setFilter('vibrant')">Rực rỡ</button>
+                <button class="filter-btn" onclick="setFilter('warm')">Ấm</button>
+                <button class="filter-btn" onclick="setFilter('cool')">Mát mẻ</button>
+                <button class="filter-btn" onclick="setFilter('retro')">Retro</button>
+                <button class="filter-btn" onclick="setFilter('dreamy')">Mơ màng</button>
+                <button class="filter-btn" onclick="setFilter('invert')">Đảo màu</button>
+            </div>
+            <div>
+                <h3>Chọn màu khung</h3>
+                <button class="frame-color" style="background: white;" onclick="setFrameColor('white')"></button>
+                <button class="frame-color" style="background: pink;" onclick="setFrameColor('pink')"></button>
+                <button class="frame-color" style="background: blue;" onclick="setFrameColor('blue')"></button>
+                <button class="frame-color" style="background: yellow;" onclick="setFrameColor('yellow')"></button>
+                <button class="frame-color" style="background: green;" onclick="setFrameColor('green')"></button>
+            </div>
+            <div>
+                <h3>Chọn Sticker</h3>
+                <button class="sticker-btn" onclick="setSticker('none')">Không sticker</button>
+                <button class="sticker-btn" onclick="setSticker('😺')">Mèo</button>
+                <button class="sticker-btn" onclick="setSticker('👑')">Vương miện</button>
+                <button class="sticker-btn" onclick="setSticker('🌟')">Ngôi sao</button>
+                <button class="sticker-btn" onclick="setSticker('🐻')">Gấu bự</button>
+                <button class="sticker-btn" onclick="setSticker('🐰')">Tai thỏ</button>
+                <button class="sticker-btn" onclick="setSticker('❤️')">Trái tim</button>
+            </div>
         </div>
     </div>
     <div id="photo-strip-container">
-        <img id="photo-strip" src="" alt="Photo strip">
+        <img id="photo-strip-4x2" class="photo-strip" src="" alt="Photo strip 4x2">
+        <img id="photo-strip-6x2" class="photo-strip" src="" alt="Photo strip 6x2">
+        <img id="photo-strip-8x2" class="photo-strip" src="" alt="Photo strip 8x2">
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js"></script>
@@ -168,15 +199,21 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const photoStrip = document.getElementById('photo-strip');
+        const photoStrip4x2 = document.getElementById('photo-strip-4x2');
+        const photoStrip6x2 = document.getElementById('photo-strip-6x2');
+        const photoStrip8x2 = document.getElementById('photo-strip-8x2');
         const retakeButton = document.getElementById('retake');
         const downloadButton = document.getElementById('download');
+        const resetLayoutButton = document.getElementById('reset-layout');
+        const layoutSelection = document.getElementById('layout-selection');
+        const mainControls = document.getElementById('main-controls');
         let photos = [];
         let currentFilter = 'none';
         let frameColor = 'white';
         let sticker = 'none';
         let rows = 0;
         let cols = 0;
+        let currentLayout = '';
 
         async function startWebcam() {
             try {
@@ -303,9 +340,32 @@
         downloadButton.addEventListener('click', () => {
             const link = document.createElement('a');
             link.download = 'photobooth-strip.png';
-            link.href = photoStrip.src;
+            link.href = getCurrentPhotoStrip().src;
             link.click();
         });
+
+        resetLayoutButton.addEventListener('click', () => {
+            rows = 0;
+            cols = 0;
+            photos = [];
+            currentLayout = '';
+            layoutSelection.style.display = 'block';
+            mainControls.style.display = 'none';
+            photoStrip4x2.style.display = 'none';
+            photoStrip6x2.style.display = 'none';
+            photoStrip8x2.style.display = 'none';
+            document.getElementById('snap').disabled = true;
+            retakeButton.style.display = 'none';
+            downloadButton.style.display = 'none';
+            resetLayoutButton.style.display = 'none';
+        });
+
+        function getCurrentPhotoStrip() {
+            if (currentLayout === '4x2') return photoStrip4x2;
+            if (currentLayout === '6x2') return photoStrip6x2;
+            if (currentLayout === '8x2') return photoStrip8x2;
+            return null;
+        }
 
         function updatePhotoStrip() {
             const stripCanvas = document.createElement('canvas');
@@ -325,27 +385,33 @@
                     const row = Math.floor(index / cols);
                     const col = index % cols;
                     stripCtx.drawImage(img, col * photoWidth, row * photoHeight, photoWidth, photoHeight);
-                    photoStrip.src = stripCanvas.toDataURL();
+                    const currentStrip = getCurrentPhotoStrip();
+                    if (currentStrip) {
+                        currentStrip.src = stripCanvas.toDataURL();
+                    }
                 };
             });
 
-            if (photos.length === 0) {
-                stripCtx.lineWidth = 4;
-                stripCtx.strokeStyle = '#ff0000';
-                stripCtx.strokeRect(0, 0, stripCanvas.width, stripCanvas.height);
-                photoStrip.src = stripCanvas.toDataURL();
-            } else {
-                stripCtx.lineWidth = 4;
-                stripCtx.strokeStyle = '#ff0000';
-                stripCtx.strokeRect(0, 0, stripCanvas.width, stripCanvas.height);
-                photoStrip.src = stripCanvas.toDataURL();
+            const currentStrip = getCurrentPhotoStrip();
+            if (currentStrip) {
+                currentStrip.src = stripCanvas.toDataURL();
+                currentStrip.classList.add('selected');
             }
         }
 
         function setLayout(newRows, newCols) {
             rows = newRows;
             cols = newCols;
+            currentLayout = `${newRows}x${newCols}`;
             photos = [];
+            layoutSelection.style.display = 'none';
+            mainControls.style.display = 'block';
+            resetLayoutButton.style.display = 'inline-block';
+
+            photoStrip4x2.style.display = currentLayout === '4x2' ? 'block' : 'none';
+            photoStrip6x2.style.display = currentLayout === '6x2' ? 'block' : 'none';
+            photoStrip8x2.style.display = currentLayout === '8x2' ? 'block' : 'none';
+
             document.getElementById('snap').disabled = false;
             updatePhotoStrip();
             updateButtonSelection('layout-btn', `${rows}x${cols}`);
@@ -376,7 +442,6 @@
             });
         }
 
-        // Kiểm tra thiết bị và tối ưu hóa
         if (/Mobi|Android|iPhone|iPad/.test(navigator.userAgent)) {
             document.body.style.padding = '5px';
             document.querySelectorAll('button').forEach(btn => {
