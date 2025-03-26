@@ -33,7 +33,7 @@
             width: 100%; 
             max-width: 300px; 
             transition: all 0.3s ease; 
-            display: none; /* Ensure layouts are hidden by default */
+            display: none; 
         }
         #photo-strip-container { 
             margin-top: 20px; 
@@ -130,15 +130,15 @@
             display: none; 
         }
         .layout-preview { 
-            width: 48%; /* Each side takes up roughly half the width */
+            width: 48%; 
             display: flex; 
-            flex-direction: column; /* Single column layout */
+            flex-direction: column; 
             gap: 5px; 
         }
         .layout-preview div { 
             background: #f0f0f0; 
             border: 1px solid #ddd; 
-            height: 100px; /* Adjusted height for square-like frames */
+            height: 100px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
@@ -313,8 +313,8 @@
         let currentFilter = 'none';
         let frameColor = '#FFFFFF';
         let sticker = 'none';
-        let rowsPerSide = 0; // Number of rows per side
-        let colsPerSide = 1; // Single column per side
+        let rowsPerSide = 0;
+        let colsPerSide = 1;
         let currentLayout = '';
 
         // Hide all layouts on page load
@@ -326,13 +326,26 @@
 
         async function startWebcam() {
             try {
+                // Check if the page is served over HTTPS or localhost (required for getUserMedia)
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                    throw new Error('Camera access requires a secure context (HTTPS). Please host the site on HTTPS or test on localhost.');
+                }
+
+                // Log available media devices for debugging
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                console.log('Available devices:', devices);
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                if (videoDevices.length === 0) {
+                    throw new Error('No camera found on this device.');
+                }
+
+                // Use minimal constraints to maximize compatibility
                 const constraints = { 
                     video: { 
-                        width: { ideal: 1280 }, 
-                        height: { ideal: 720 }, 
-                        facingMode: { ideal: 'user' } 
+                        facingMode: { ideal: 'user' } // Prefer front camera, but allow fallback
                     } 
                 };
+
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 video.onloadedmetadata = () => {
@@ -343,7 +356,18 @@
                 };
             } catch (err) {
                 console.error('Không thể truy cập webcam:', err);
-                alert('Không thể truy cập webcam: ' + err.message + '\nVui lòng kiểm tra quyền truy cập camera trên thiết bị của bạn.');
+                let errorMessage = 'Không thể truy cập webcam: ' + err.message + '\n';
+                if (err.name === 'NotAllowedError') {
+                    errorMessage += 'Vui lòng cấp quyền truy cập camera trong cài đặt trình duyệt hoặc thiết bị của bạn.\n' +
+                                    'Trên Android, bạn có thể vào Cài đặt > Ứng dụng > [Trình duyệt] > Quyền > Camera và bật quyền.';
+                } else if (err.message.includes('secure context')) {
+                    errorMessage += 'Vui lòng truy cập trang web qua HTTPS hoặc sử dụng localhost để phát triển.';
+                } else if (err.message.includes('No camera found')) {
+                    errorMessage += 'Thiết bị của bạn không có camera hoặc camera đang bị ứng dụng khác sử dụng.';
+                } else {
+                    errorMessage += 'Vui lòng kiểm tra xem camera có hoạt động không và thử lại.';
+                }
+                alert(errorMessage);
             }
         }
 
@@ -457,8 +481,8 @@
             const ctx = canvas.getContext('2d');
             const photoWidth = 480;
             const photoHeight = 360;
-            canvas.width = photoWidth * 2; // 1 column per side, 2 sides
-            canvas.height = photoHeight * rowsPerSide; // Rows per side
+            canvas.width = photoWidth * 2;
+            canvas.height = photoHeight * rowsPerSide;
 
             ctx.fillStyle = frameColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -466,7 +490,7 @@
             photos.forEach((photo, index) => {
                 const img = new Image();
                 img.src = photo;
-                const side = index < (rowsPerSide * colsPerSide) ? 0 : 1; // First half on left, second half on right
+                const side = index < (rowsPerSide * colsPerSide) ? 0 : 1;
                 const slotIndex = index % (rowsPerSide * colsPerSide);
                 const row = slotIndex;
                 const col = side;
@@ -508,7 +532,7 @@
                 const rightSide = currentStrip.querySelector('.right-side');
                 leftSide.innerHTML = '';
                 rightSide.innerHTML = '';
-                const slotsPerSide = rowsPerSide * colsPerSide; // Number of slots per side
+                const slotsPerSide = rowsPerSide * colsPerSide;
                 for (let i = 0; i < slotsPerSide; i++) {
                     const leftDiv = document.createElement('div');
                     const rightDiv = document.createElement('div');
@@ -526,7 +550,7 @@
 
             const leftSide = currentStrip.querySelector('.left-side');
             const rightSide = currentStrip.querySelector('.right-side');
-            const slotsPerSide = rowsPerSide * colsPerSide; // Number of slots per side
+            const slotsPerSide = rowsPerSide * colsPerSide;
 
             leftSide.innerHTML = '';
             rightSide.innerHTML = '';
@@ -563,24 +587,22 @@
 
             currentStrip.style.borderColor = frameColor;
             currentStrip.classList.add('selected');
-            currentStrip.style.display = 'flex'; // Ensure the selected strip is displayed as flex
+            currentStrip.style.display = 'flex';
         }
 
         function setLayout(newRows, newCols) {
-            rowsPerSide = newRows; // Rows per side (e.g., 4 for 4x2 means 4 rows per side)
-            colsPerSide = 1; // Single column per side
+            rowsPerSide = newRows;
+            colsPerSide = 1;
             currentLayout = `${newRows}x${newCols}`;
             photos = [];
             layoutSelection.style.display = 'none';
             mainControls.style.display = 'block';
             resetLayoutButton.style.display = 'inline-block';
 
-            // Hide all layouts first
             photoStrip4x2.style.display = 'none';
             photoStrip6x2.style.display = 'none';
             photoStrip8x2.style.display = 'none';
 
-            // Show only the selected layout
             if (currentLayout === '4x2') {
                 photoStrip4x2.style.display = 'flex';
             } else if (currentLayout === '6x2') {
