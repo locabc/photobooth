@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Photobooth Web</title>
     <style>
+        /* Giữ nguyên toàn bộ CSS của bạn */
         body { 
             font-family: Arial, sans-serif; 
             text-align: center; 
@@ -33,7 +34,7 @@
             width: 100%; 
             max-width: 300px; 
             transition: all 0.3s ease; 
-            display: none; 
+            display: none; /* Ensure layouts are hidden by default */
         }
         #photo-strip-container { 
             margin-top: 20px; 
@@ -130,15 +131,15 @@
             display: none; 
         }
         .layout-preview { 
-            width: 48%; 
+            width: 48%; /* Each side takes up roughly half the width */
             display: flex; 
-            flex-direction: column; 
+            flex-direction: column; /* Single column layout */
             gap: 5px; 
         }
         .layout-preview div { 
             background: #f0f0f0; 
             border: 1px solid #ddd; 
-            height: 100px; 
+            height: 100px; /* Adjusted height for square-like frames */
             display: flex; 
             align-items: center; 
             justify-content: center; 
@@ -178,7 +179,7 @@
 </head>
 <body>
     <h1>Photobooth</h1>
-    <video id="video" autoplay playsinline></video>
+    <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
     <div id="controls">
         <div id="layout-selection">
@@ -317,35 +318,40 @@
         let colsPerSide = 1;
         let currentLayout = '';
 
-        // Hide all layouts on page load
         window.onload = () => {
             photoStrip4x2.style.display = 'none';
             photoStrip6x2.style.display = 'none';
             photoStrip8x2.style.display = 'none';
+            checkCameraPermission(); // Kiểm tra quyền camera khi tải trang
         };
+
+        // Kiểm tra quyền camera trước khi truy cập
+        async function checkCameraPermission() {
+            try {
+                const permissionStatus = await navigator.permissions.query({ name: 'camera' });
+                if (permissionStatus.state === 'granted') {
+                    startWebcam();
+                } else if (permissionStatus.state === 'prompt') {
+                    startWebcam(); // Sẽ hiển thị yêu cầu cấp quyền
+                } else {
+                    alert('Quyền truy cập camera bị từ chối. Vui lòng cấp quyền camera trong cài đặt trình duyệt hoặc thiết bị của bạn:\n1. Mở Cài đặt > Ứng dụng > Trình duyệt > Quyền > Bật Camera.\n2. Đảm bảo trang web đang chạy trên HTTPS.');
+                }
+            } catch (err) {
+                console.error('Không thể kiểm tra quyền camera:', err);
+                startWebcam(); // Thử truy cập webcam để hiển thị thông báo lỗi chi tiết
+            }
+        }
 
         async function startWebcam() {
             try {
-                // Check if the page is served over HTTPS or localhost (required for getUserMedia)
-                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                    throw new Error('Camera access requires a secure context (HTTPS). Please host the site on HTTPS or test on localhost.');
-                }
-
-                // Log available media devices for debugging
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                console.log('Available devices:', devices);
-                const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                if (videoDevices.length === 0) {
-                    throw new Error('No camera found on this device.');
-                }
-
-                // Use minimal constraints to maximize compatibility
+                // Cấu hình linh hoạt hơn, không ép buộc facingMode
                 const constraints = { 
                     video: { 
-                        facingMode: { ideal: 'user' } // Prefer front camera, but allow fallback
+                        width: { ideal: 640 }, 
+                        height: { ideal: 480 }
+                        // Loại bỏ facingMode để thiết bị tự chọn camera khả dụng
                     } 
                 };
-
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 video.onloadedmetadata = () => {
@@ -356,18 +362,13 @@
                 };
             } catch (err) {
                 console.error('Không thể truy cập webcam:', err);
-                let errorMessage = 'Không thể truy cập webcam: ' + err.message + '\n';
-                if (err.name === 'NotAllowedError') {
-                    errorMessage += 'Vui lòng cấp quyền truy cập camera trong cài đặt trình duyệt hoặc thiết bị của bạn.\n' +
-                                    'Trên Android, bạn có thể vào Cài đặt > Ứng dụng > [Trình duyệt] > Quyền > Camera và bật quyền.';
-                } else if (err.message.includes('secure context')) {
-                    errorMessage += 'Vui lòng truy cập trang web qua HTTPS hoặc sử dụng localhost để phát triển.';
-                } else if (err.message.includes('No camera found')) {
-                    errorMessage += 'Thiết bị của bạn không có camera hoặc camera đang bị ứng dụng khác sử dụng.';
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    alert('Quyền truy cập camera bị từ chối. Vui lòng cấp quyền camera trong cài đặt trình duyệt hoặc thiết bị của bạn:\n1. Mở Cài đặt > Ứng dụng > Trình duyệt > Quyền > Bật Camera.\n2. Đảm bảo trang web đang chạy trên HTTPS.');
+                } else if (err.name === 'NotFoundError') {
+                    alert('Không tìm thấy camera trên thiết bị. Vui lòng kiểm tra xem thiết bị của bạn có camera hoạt động không.');
                 } else {
-                    errorMessage += 'Vui lòng kiểm tra xem camera có hoạt động không và thử lại.';
+                    alert('Lỗi khi truy cập camera: ' + err.message + '\nVui lòng thử lại hoặc kiểm tra thiết bị của bạn.');
                 }
-                alert(errorMessage);
             }
         }
 
@@ -380,7 +381,7 @@
             }
         }
 
-        Promise.all([startWebcam(), loadFaceApiModels()]).then(() => {
+        Promise.all([loadFaceApiModels()]).then(() => {
             console.log('Ứng dụng đã sẵn sàng');
         });
 
@@ -481,8 +482,8 @@
             const ctx = canvas.getContext('2d');
             const photoWidth = 480;
             const photoHeight = 360;
-            canvas.width = photoWidth * 2;
-            canvas.height = photoHeight * rowsPerSide;
+            canvas.width = photoWidth * 2; // 1 column per side, 2 sides
+            canvas.height = photoHeight * rowsPerSide; // Rows per side
 
             ctx.fillStyle = frameColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -490,7 +491,7 @@
             photos.forEach((photo, index) => {
                 const img = new Image();
                 img.src = photo;
-                const side = index < (rowsPerSide * colsPerSide) ? 0 : 1;
+                const side = index < (rowsPerSide * colsPerSide) ? 0 : 1; // First half on left, second half on right
                 const slotIndex = index % (rowsPerSide * colsPerSide);
                 const row = slotIndex;
                 const col = side;
@@ -532,7 +533,7 @@
                 const rightSide = currentStrip.querySelector('.right-side');
                 leftSide.innerHTML = '';
                 rightSide.innerHTML = '';
-                const slotsPerSide = rowsPerSide * colsPerSide;
+                const slotsPerSide = rowsPerSide * colsPerSide; // Number of slots per side
                 for (let i = 0; i < slotsPerSide; i++) {
                     const leftDiv = document.createElement('div');
                     const rightDiv = document.createElement('div');
@@ -550,7 +551,7 @@
 
             const leftSide = currentStrip.querySelector('.left-side');
             const rightSide = currentStrip.querySelector('.right-side');
-            const slotsPerSide = rowsPerSide * colsPerSide;
+            const slotsPerSide = rowsPerSide * colsPerSide; // Number of slots per side
 
             leftSide.innerHTML = '';
             rightSide.innerHTML = '';
@@ -587,22 +588,24 @@
 
             currentStrip.style.borderColor = frameColor;
             currentStrip.classList.add('selected');
-            currentStrip.style.display = 'flex';
+            currentStrip.style.display = 'flex'; // Ensure the selected strip is displayed as flex
         }
 
         function setLayout(newRows, newCols) {
-            rowsPerSide = newRows;
-            colsPerSide = 1;
+            rowsPerSide = newRows; // Rows per side (e.g., 4 for 4x2 means 4 rows per side)
+            colsPerSide = 1; // Single column per side
             currentLayout = `${newRows}x${newCols}`;
             photos = [];
             layoutSelection.style.display = 'none';
             mainControls.style.display = 'block';
             resetLayoutButton.style.display = 'inline-block';
 
+            // Hide all layouts first
             photoStrip4x2.style.display = 'none';
             photoStrip6x2.style.display = 'none';
             photoStrip8x2.style.display = 'none';
 
+            // Show only the selected layout
             if (currentLayout === '4x2') {
                 photoStrip4x2.style.display = 'flex';
             } else if (currentLayout === '6x2') {
