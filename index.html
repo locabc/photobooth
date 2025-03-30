@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Photobooth Web</title>
     <style>
-        /* Giữ nguyên toàn bộ CSS của bạn */
         body { 
             font-family: Arial, sans-serif; 
             text-align: center; 
@@ -34,7 +33,8 @@
             width: 100%; 
             max-width: 300px; 
             transition: all 0.3s ease; 
-            display: none; /* Ensure layouts are hidden by default */
+            display: none; 
+            background: #fff; 
         }
         #photo-strip-container { 
             margin-top: 20px; 
@@ -42,7 +42,7 @@
             justify-content: center; 
         }
         .photo-strip.selected { 
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.7), 0 0 25px rgba(255, 0, 0, 0.4); 
+            box-shadow: 0 0 15px rgba(226, 222, 222, 0.7), 0 0 25px rgb(243, 245, 243); 
         }
         #controls { 
             margin: 20px 0; 
@@ -130,24 +130,40 @@
         #main-controls { 
             display: none; 
         }
-        .layout-preview { 
-            width: 48%; /* Each side takes up roughly half the width */
+        .photo-strip { 
             display: flex; 
-            flex-direction: column; /* Single column layout */
-            gap: 5px; 
+            justify-content: space-between; 
+            width: 100%; 
+            max-width: 300px; 
+            padding: 0; 
+            margin: 0 auto; 
+        }
+        .layout-preview { 
+            width: 48%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 0; 
+            margin: 0; 
+        }
+        .layout-preview.left-side { 
+            margin-right: 4%; 
+        }
+        .layout-preview.right-side { 
+            margin-left: 4%; 
         }
         .layout-preview div { 
             background: #f0f0f0; 
             border: 1px solid #ddd; 
-            height: 100px; /* Adjusted height for square-like frames */
+            height: 100px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             color: #888; 
             font-size: 12px; 
+            margin: 7px 0; /* Thêm khoảng cách dọc giữa các ảnh */
+            width: 100%; 
+            box-sizing: border-box; 
         }
-
-        /* Responsive design for mobile */
         @media (max-width: 600px) {
             h1 { font-size: 24px; }
             h3 { font-size: 16px; }
@@ -173,6 +189,7 @@
             .layout-preview div { 
                 height: 80px; 
                 font-size: 10px; 
+                margin: 4px 0; /* Giảm khoảng cách trên mobile */
             }
         }
     </style>
@@ -227,6 +244,9 @@
                 <button class="frame-color" style="background: #BBDEFB;" onclick="setFrameColor('#BBDEFB')"></button>
                 <button class="frame-color" style="background: #C8E6C9;" onclick="setFrameColor('#C8E6C9')"></button>
                 <button class="frame-color" style="background: #E6EE9C;" onclick="setFrameColor('#E6EE9C')"></button>
+                <button class="frame-color" style="background: #dce2a2;" onclick="setFrameColor('#dce2a2')"></button>
+                <button class="frame-color" style="background: #F3F4F6;" onclick="setFrameColor('#F3F4F6')"></button>
+                <button class="frame-color" style="background: #baebeb;" onclick="setFrameColor('#baebeb')"></button>
             </div>
             <div>
                 <h3>Chọn Sticker</h3>
@@ -237,6 +257,13 @@
                 <button class="sticker-btn" onclick="setSticker('🐻')">Gấu bự</button>
                 <button class="sticker-btn" onclick="setSticker('🐰')">Tai thỏ</button>
                 <button class="sticker-btn" onclick="setSticker('❤️')">Trái tim</button>
+                <br>                
+                <button class="sticker-btn" onclick="setSticker('🎈')">Bong bóng bay</button>
+                <button class="sticker-btn" onclick="setSticker('🎉')">Bong bóng</button>
+                <button class="sticker-btn" onclick="setSticker('🎂')">Bánh sinh nhật</button>
+                <button class="sticker-btn" onclick="setSticker('🎁')">Quà tặng</button>
+
+
             </div>
         </div>
     </div>
@@ -322,34 +349,31 @@
             photoStrip4x2.style.display = 'none';
             photoStrip6x2.style.display = 'none';
             photoStrip8x2.style.display = 'none';
-            checkCameraPermission(); // Kiểm tra quyền camera khi tải trang
+            checkCameraPermission();
         };
 
-        // Kiểm tra quyền camera trước khi truy cập
         async function checkCameraPermission() {
             try {
                 const permissionStatus = await navigator.permissions.query({ name: 'camera' });
                 if (permissionStatus.state === 'granted') {
                     startWebcam();
                 } else if (permissionStatus.state === 'prompt') {
-                    startWebcam(); // Sẽ hiển thị yêu cầu cấp quyền
+                    startWebcam();
                 } else {
-                    alert('Quyền truy cập camera bị từ chối. Vui lòng cấp quyền camera trong cài đặt trình duyệt hoặc thiết bị của bạn:\n1. Mở Cài đặt > Ứng dụng > Trình duyệt > Quyền > Bật Camera.\n2. Đảm bảo trang web đang chạy trên HTTPS.');
+                    alert('Quyền truy cập camera bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt hoặc thiết bị.');
                 }
             } catch (err) {
                 console.error('Không thể kiểm tra quyền camera:', err);
-                startWebcam(); // Thử truy cập webcam để hiển thị thông báo lỗi chi tiết
+                startWebcam();
             }
         }
 
         async function startWebcam() {
             try {
-                // Cấu hình linh hoạt hơn, không ép buộc facingMode
                 const constraints = { 
                     video: { 
                         width: { ideal: 640 }, 
                         height: { ideal: 480 }
-                        // Loại bỏ facingMode để thiết bị tự chọn camera khả dụng
                     } 
                 };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -358,17 +382,10 @@
                     video.play();
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
-                    console.log(`Video resolution: ${video.videoWidth}x${video.videoHeight}`);
                 };
             } catch (err) {
                 console.error('Không thể truy cập webcam:', err);
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    alert('Quyền truy cập camera bị từ chối. Vui lòng cấp quyền camera trong cài đặt trình duyệt hoặc thiết bị của bạn:\n1. Mở Cài đặt > Ứng dụng > Trình duyệt > Quyền > Bật Camera.\n2. Đảm bảo trang web đang chạy trên HTTPS.');
-                } else if (err.name === 'NotFoundError') {
-                    alert('Không tìm thấy camera trên thiết bị. Vui lòng kiểm tra xem thiết bị của bạn có camera hoạt động không.');
-                } else {
-                    alert('Lỗi khi truy cập camera: ' + err.message + '\nVui lòng thử lại hoặc kiểm tra thiết bị của bạn.');
-                }
+                alert('Lỗi khi truy cập camera: ' + err.message);
             }
         }
 
@@ -480,10 +497,15 @@
             const currentStrip = getCurrentPhotoStrip();
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            const photoWidth = 480;
-            const photoHeight = 360;
-            canvas.width = photoWidth * 2; // 1 column per side, 2 sides
-            canvas.height = photoHeight * rowsPerSide; // Rows per side
+            const photoWidth = 140;
+            const photoHeight = 100;
+            const borderWidth = 10;
+            const gap = 10; // Khoảng cách giữa hai bên
+            const photoGap = 5; // Khoảng cách giữa các ảnh trong cùng một bên
+
+            // Tính toán chiều cao canvas bao gồm khoảng cách giữa các ảnh
+            canvas.width = (photoWidth * 2) + gap + (borderWidth * 2);
+            canvas.height = (photoHeight * rowsPerSide) + (photoGap * (rowsPerSide - 1)) + (borderWidth * 2);
 
             ctx.fillStyle = frameColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -491,11 +513,11 @@
             photos.forEach((photo, index) => {
                 const img = new Image();
                 img.src = photo;
-                const side = index < (rowsPerSide * colsPerSide) ? 0 : 1; // First half on left, second half on right
-                const slotIndex = index % (rowsPerSide * colsPerSide);
-                const row = slotIndex;
-                const col = side;
-                ctx.drawImage(img, col * photoWidth, row * photoHeight, photoWidth, photoHeight);
+                const side = index < rowsPerSide ? 0 : 1;
+                const row = index % rowsPerSide;
+                const x = side === 0 ? borderWidth : borderWidth + photoWidth + gap;
+                const y = borderWidth + (row * (photoHeight + photoGap)); // Thêm khoảng cách giữa các ảnh
+                ctx.drawImage(img, x, y, photoWidth, photoHeight);
             });
 
             link.href = canvas.toDataURL('image/jpeg', 1.0);
@@ -533,7 +555,7 @@
                 const rightSide = currentStrip.querySelector('.right-side');
                 leftSide.innerHTML = '';
                 rightSide.innerHTML = '';
-                const slotsPerSide = rowsPerSide * colsPerSide; // Number of slots per side
+                const slotsPerSide = rowsPerSide;
                 for (let i = 0; i < slotsPerSide; i++) {
                     const leftDiv = document.createElement('div');
                     const rightDiv = document.createElement('div');
@@ -542,6 +564,7 @@
                     leftSide.appendChild(leftDiv);
                     rightSide.appendChild(rightDiv);
                 }
+                currentStrip.style.background = frameColor;
             }
         }
 
@@ -551,7 +574,7 @@
 
             const leftSide = currentStrip.querySelector('.left-side');
             const rightSide = currentStrip.querySelector('.right-side');
-            const slotsPerSide = rowsPerSide * colsPerSide; // Number of slots per side
+            const slotsPerSide = rowsPerSide;
 
             leftSide.innerHTML = '';
             rightSide.innerHTML = '';
@@ -587,25 +610,24 @@
             }
 
             currentStrip.style.borderColor = frameColor;
+            currentStrip.style.background = frameColor;
             currentStrip.classList.add('selected');
-            currentStrip.style.display = 'flex'; // Ensure the selected strip is displayed as flex
+            currentStrip.style.display = 'flex';
         }
 
         function setLayout(newRows, newCols) {
-            rowsPerSide = newRows; // Rows per side (e.g., 4 for 4x2 means 4 rows per side)
-            colsPerSide = 1; // Single column per side
+            rowsPerSide = newRows;
+            colsPerSide = 1;
             currentLayout = `${newRows}x${newCols}`;
             photos = [];
             layoutSelection.style.display = 'none';
             mainControls.style.display = 'block';
             resetLayoutButton.style.display = 'inline-block';
 
-            // Hide all layouts first
             photoStrip4x2.style.display = 'none';
             photoStrip6x2.style.display = 'none';
             photoStrip8x2.style.display = 'none';
 
-            // Show only the selected layout
             if (currentLayout === '4x2') {
                 photoStrip4x2.style.display = 'flex';
             } else if (currentLayout === '6x2') {
