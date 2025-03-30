@@ -1,679 +1,359 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Photobooth Web</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            background: #f0f0f0; 
-            margin: 0; 
-            padding: 10px; 
-        }
-        #video { 
-            border: 2px solid #000; 
-            width: 100%; 
-            max-width: 640px; 
-            height: auto; 
-            transform: scaleX(-1); 
-            display: block; 
-            margin: 0 auto; 
-        }
-        #canvas { 
-            display: none; 
-            width: 100%; 
-            max-width: 640px; 
-            height: auto; 
-        }
-        #photo-strip-4x2, #photo-strip-6x2, #photo-strip-8x2 { 
-            margin-top: 20px; 
-            border: 10px solid #fff; 
-            width: 100%; 
-            max-width: 300px; 
-            transition: all 0.3s ease; 
-            display: none; 
-            background: #fff; 
-        }
-        #photo-strip-container { 
-            margin-top: 20px; 
-            display: flex; 
-            justify-content: center; 
-        }
-        .photo-strip.selected { 
-            box-shadow: 0 0 15px rgba(226, 222, 222, 0.7), 0 0 25px rgb(243, 245, 243); 
-        }
-        #controls { 
-            margin: 20px 0; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
-        }
-        .filter-btn, .frame-color, .sticker-btn, .layout-btn { 
-            padding: 8px; 
-            margin: 3px; 
-            cursor: pointer; 
-            border: 2px solid transparent; 
-            border-radius: 5px; 
-            transition: all 0.3s ease; 
-            font-size: 14px; 
-        }
-        .filter-btn:hover, .frame-color:hover, .sticker-btn:hover, .layout-btn:hover { 
-            background: #ddd; 
-        }
-        .layout-btn.selected, .filter-btn.selected, .frame-color.selected, .sticker-btn.selected { 
-            border: 2px solid #ff0000; 
-            background: #e0e0e0; 
-            font-weight: bold; 
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.7), 0 0 25px rgba(255, 0, 0, 0.4); 
-            transform: scale(1.1); 
-        }
-        .layout-btn { 
-            animation: pulse 1.5s infinite; 
-        }
-        @keyframes pulse { 
-            0% { transform: scale(1); } 
-            50% { transform: scale(1.05); } 
-            100% { transform: scale(1); } 
-        }
-        .frame-color { 
-            width: 40px; 
-            height: 40px; 
-            display: inline-block; 
-            border-radius: 5px; 
-            position: relative; 
-        }
-        .frame-color.selected::after { 
-            content: '✔'; 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            color: white; 
-            font-size: 20px; 
-            font-weight: bold; 
-        }
-        #retake, #download, #save, #snap, #reset-layout { 
-            padding: 10px; 
-            margin: 5px; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 5px; 
-            font-size: 16px; 
-        }
-        #snap { background: #2196F3; color: white; }
-        #snap:hover { background: #1976D2; }
-        #retake { 
-            display: none; 
-            background: #ff4444; 
-            color: white; 
-        }
-        #retake:hover { background: #cc0000; }
-        #save { background: #FF9800; color: white; }
-        #save:hover { background: #F57C00; }
-        #download { 
-            display: none; 
-            background: #4CAF50; 
-            color: white; 
-        }
-        #download:hover { background: #45a049; }
-        #reset-layout { 
-            display: none; 
-            background: #9c27b0; 
-            color: white; 
-        }
-        #reset-layout:hover { background: #7b1fa2; }
-        #layout-selection { 
-            display: block; 
-        }
-        #main-controls { 
-            display: none; 
-        }
-        .photo-strip { 
-            display: flex; 
-            justify-content: space-between; 
-            width: 100%; 
-            max-width: 300px; 
-            padding: 0; 
-            margin: 0 auto; 
-        }
-        .layout-preview { 
-            width: 48%; 
-            display: flex; 
-            flex-direction: column; 
-            padding: 0; 
-            margin: 0; 
-        }
-        .layout-preview.left-side { 
-            margin-right: 4%; 
-        }
-        .layout-preview.right-side { 
-            margin-left: 4%; 
-        }
-        .layout-preview div { 
-            background: #f0f0f0; 
-            border: 1px solid #ddd; 
-            height: 100px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: #888; 
-            font-size: 12px; 
-            margin: 7px 0; /* Thêm khoảng cách dọc giữa các ảnh */
-            width: 100%; 
-            box-sizing: border-box; 
-        }
-        @media (max-width: 600px) {
-            h1 { font-size: 24px; }
-            h3 { font-size: 16px; }
-            .filter-btn, .frame-color, .sticker-btn, .layout-btn { 
-                padding: 6px; 
-                font-size: 12px; 
-            }
-            #snap, #retake, #save, #download, #reset-layout { 
-                padding: 8px; 
-                font-size: 14px; 
-            }
-            #video, #canvas, .photo-strip { 
-                max-width: 100%; 
-                height: auto; 
-            }
-            .frame-color { 
-                width: 30px; 
-                height: 30px; 
-            }
-            #photo-strip-4x2, #photo-strip-6x2, #photo-strip-8x2 { 
-                max-width: 250px; 
-            }
-            .layout-preview div { 
-                height: 80px; 
-                font-size: 10px; 
-                margin: 4px 0; /* Giảm khoảng cách trên mobile */
-            }
-        }
-    </style>
-</head>
-<body>
-    <h1>Photobooth</h1>
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="canvas"></canvas>
-    <div id="controls">
-        <div id="layout-selection">
-            <h3>Chọn Layout</h3>
-            <button class="layout-btn" onclick="setLayout(4, 2)">4x2</button>
-            <button class="layout-btn" onclick="setLayout(6, 2)">6x2</button>
-            <button class="layout-btn" onclick="setLayout(8, 2)">8x2</button>
-        </div>
-        <div id="main-controls">
-            <div>
-                <button id="snap" disabled>Chụp ảnh</button>
-                <button id="retake">Chụp lại</button>
-                <button id="save">Lưu ảnh ghép</button>
-                <button id="download">Tải ảnh xuống</button>
-                <button id="reset-layout">Chọn lại</button>
-            </div>
-            <div>
-                <h3>Chọn Filter</h3>
-                <button class="filter-btn" onclick="setFilter('none')">Không filter</button>
-                <button class="filter-btn" onclick="setFilter('grayscale')">Đen trắng</button>
-                <button class="filter-btn" onclick="setFilter('sepia')">Sepia</button>
-                <button class="filter-btn" onclick="setFilter('vibrant')">Rực rỡ</button>
-                <button class="filter-btn" onclick="setFilter('warm')">Ấm</button>
-                <button class="filter-btn" onclick="setFilter('cool')">Mát mẻ</button>
-                <button class="filter-btn" onclick="setFilter('retro')">Retro</button>
-                <button class="filter-btn" onclick="setFilter('dreamy')">Mơ màng</button>
-                <button class="filter-btn" onclick="setFilter('invert')">Đảo màu</button>
-            </div>
-            <div>
-                <h3>Chọn màu khung</h3>
-                <button class="frame-color" style="background: #FFFFFF;" onclick="setFrameColor('#FFFFFF')"></button>
-                <button class="frame-color" style="background: #000000;" onclick="setFrameColor('#000000')"></button>
-                <button class="frame-color" style="background: #E5E5E5;" onclick="setFrameColor('#E5E5E5')"></button>
-                <button class="frame-color" style="background: #A3A3A3;" onclick="setFrameColor('#A3A3A3')"></button>
-                <button class="frame-color" style="background: #4A4A4A;" onclick="setFrameColor('#4A4A4A')"></button>
-                <button class="frame-color" style="background: #4A2C2A;" onclick="setFrameColor('#4A2C2A')"></button>
-                <br>
-                <button class="frame-color" style="background: #8B1E3F;" onclick="setFrameColor('#8B1E3F')"></button>
-                <button class="frame-color" style="background: #1E3A8A;" onclick="setFrameColor('#1E3A8A')"></button>
-                <button class="frame-color" style="background: #FFF9C4;" onclick="setFrameColor('#FFF9C4')"></button>
-                <button class="frame-color" style="background: #FFCCBC;" onclick="setFrameColor('#FFCCBC')"></button>
-                <button class="frame-color" style="background: #F8BBD0;" onclick="setFrameColor('#F8BBD0')"></button>
-                <button class="frame-color" style="background: #E1BEE7;" onclick="setFrameColor('#E1BEE7')"></button>
-                <br>
-                <button class="frame-color" style="background: #BBDEFB;" onclick="setFrameColor('#BBDEFB')"></button>
-                <button class="frame-color" style="background: #C8E6C9;" onclick="setFrameColor('#C8E6C9')"></button>
-                <button class="frame-color" style="background: #E6EE9C;" onclick="setFrameColor('#E6EE9C')"></button>
-                <button class="frame-color" style="background: #dce2a2;" onclick="setFrameColor('#dce2a2')"></button>
-                <button class="frame-color" style="background: #F3F4F6;" onclick="setFrameColor('#F3F4F6')"></button>
-                <button class="frame-color" style="background: #baebeb;" onclick="setFrameColor('#baebeb')"></button>
-            </div>
-            <div>
-                <h3>Chọn Sticker</h3>
-                <button class="sticker-btn" onclick="setSticker('none')">Không sticker</button>
-                <button class="sticker-btn" onclick="setSticker('😺')">Mèo</button>
-                <button class="sticker-btn" onclick="setSticker('👑')">Vương miện</button>
-                <button class="sticker-btn" onclick="setSticker('🌟')">Ngôi sao</button>
-                <button class="sticker-btn" onclick="setSticker('🐻')">Gấu bự</button>
-                <button class="sticker-btn" onclick="setSticker('🐰')">Tai thỏ</button>
-                <button class="sticker-btn" onclick="setSticker('❤️')">Trái tim</button>
-                <br>                
-                <button class="sticker-btn" onclick="setSticker('🎈')">Bong bóng bay</button>
-                <button class="sticker-btn" onclick="setSticker('🎉')">Bong bóng</button>
-                <button class="sticker-btn" onclick="setSticker('🎂')">Bánh sinh nhật</button>
-                <button class="sticker-btn" onclick="setSticker('🎁')">Quà tặng</button>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js"></script>
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const photoStrip4x2 = document.getElementById('photo-strip-4x2');
+    const photoStrip6x2 = document.getElementById('photo-strip-6x2');
+    const photoStrip8x2 = document.getElementById('photo-strip-8x2');
+    const retakeButton = document.getElementById('retake');
+    const downloadButton = document.getElementById('download');
+    const resetLayoutButton = document.getElementById('reset-layout');
+    const layoutSelection = document.getElementById('layout-selection');
+    const mainControls = document.getElementById('main-controls');
+    let photos = [];
+    let currentFilter = 'none';
+    let frameColor = '#FFFFFF';
+    let sticker = 'none';
+    let rowsPerSide = 0;
+    let colsPerSide = 1;
+    let currentLayout = '';
 
+    window.onload = () => {
+        photoStrip4x2.style.display = 'none';
+        photoStrip6x2.style.display = 'none';
+        photoStrip8x2.style.display = 'none';
+        checkCameraPermission();
+    };
 
-            </div>
-        </div>
-    </div>
-    <div id="photo-strip-container">
-        <div id="photo-strip-4x2" class="photo-strip">
-            <div class="layout-preview left-side">
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-            </div>
-            <div class="layout-preview right-side">
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-            </div>
-        </div>
-        <div id="photo-strip-6x2" class="photo-strip">
-            <div class="layout-preview left-side">
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-            </div>
-            <div class="layout-preview right-side">
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-            </div>
-        </div>
-        <div id="photo-strip-8x2" class="photo-strip">
-            <div class="layout-preview left-side">
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-            </div>
-            <div class="layout-preview right-side">
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-                <div>Empty</div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js"></script>
-    <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const photoStrip4x2 = document.getElementById('photo-strip-4x2');
-        const photoStrip6x2 = document.getElementById('photo-strip-6x2');
-        const photoStrip8x2 = document.getElementById('photo-strip-8x2');
-        const retakeButton = document.getElementById('retake');
-        const downloadButton = document.getElementById('download');
-        const resetLayoutButton = document.getElementById('reset-layout');
-        const layoutSelection = document.getElementById('layout-selection');
-        const mainControls = document.getElementById('main-controls');
-        let photos = [];
-        let currentFilter = 'none';
-        let frameColor = '#FFFFFF';
-        let sticker = 'none';
-        let rowsPerSide = 0;
-        let colsPerSide = 1;
-        let currentLayout = '';
-
-        window.onload = () => {
-            photoStrip4x2.style.display = 'none';
-            photoStrip6x2.style.display = 'none';
-            photoStrip8x2.style.display = 'none';
-            checkCameraPermission();
-        };
-
-        async function checkCameraPermission() {
-            try {
-                const permissionStatus = await navigator.permissions.query({ name: 'camera' });
-                if (permissionStatus.state === 'granted') {
-                    startWebcam();
-                } else if (permissionStatus.state === 'prompt') {
-                    startWebcam();
-                } else {
-                    alert('Quyền truy cập camera bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt hoặc thiết bị.');
-                }
-            } catch (err) {
-                console.error('Không thể kiểm tra quyền camera:', err);
+    async function checkCameraPermission() {
+        try {
+            const permissionStatus = await navigator.permissions.query({ name: 'camera' });
+            if (permissionStatus.state === 'granted') {
                 startWebcam();
+            } else if (permissionStatus.state === 'prompt') {
+                startWebcam();
+            } else {
+                alert('Quyền truy cập camera bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt hoặc thiết bị.');
+            }
+        } catch (err) {
+            console.error('Không thể kiểm tra quyền camera:', err);
+            startWebcam();
+        }
+    }
+
+    async function startWebcam() {
+        try {
+            const constraints = { 
+                video: { 
+                    width: { ideal: 640 }, 
+                    height: { ideal: 480 }
+                } 
+            };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            video.onloadedmetadata = () => {
+                video.play();
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            };
+        } catch (err) {
+            console.error('Không thể truy cập webcam:', err);
+            alert('Lỗi khi truy cập camera: ' + err.message);
+        }
+    }
+
+    async function loadFaceApiModels() {
+        try {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/');
+            console.log('Mô hình nhận diện đã sẵn sàng');
+        } catch (err) {
+            console.error('Không thể tải mô hình nhận diện khuôn mặt:', err);
+        }
+    }
+
+    Promise.all([loadFaceApiModels()]).then(() => {
+        console.log('Ứng dụng đã sẵn sàng');
+    });
+
+    document.getElementById('snap').addEventListener('click', async () => {
+        if (photos.length >= rowsPerSide * colsPerSide * 2) return;
+
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1); // Lật ảnh để giống khung video
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+
+        if (sticker !== 'none') {
+            const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
+            if (detections.length > 0) {
+                const face = detections[0].box;
+                ctx.font = sticker === '🐻' ? '150px Arial' : sticker === '🐰' ? '80px Arial' : '50px Arial';
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                const stickerX = face.x + face.width / 2;
+                const stickerY = sticker === '🐰' ? face.y - 50 : face.y - 10;
+                ctx.fillText(sticker, stickerX, stickerY);
             }
         }
 
-        async function startWebcam() {
-            try {
-                const constraints = { 
-                    video: { 
-                        width: { ideal: 640 }, 
-                        height: { ideal: 480 }
-                    } 
-                };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                video.onloadedmetadata = () => {
-                    video.play();
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                };
-            } catch (err) {
-                console.error('Không thể truy cập webcam:', err);
-                alert('Lỗi khi truy cập camera: ' + err.message);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < imageData.data.length; i += 4) {
+            let r = imageData.data[i];
+            let g = imageData.data[i + 1];
+            let b = imageData.data[i + 2];
+            if (currentFilter === 'grayscale') {
+                const gray = 0.3 * r + 0.59 * g + 0.11 * b;
+                imageData.data[i] = imageData.data[i + 1] = imageData.data[i + 2] = gray;
+            } else if (currentFilter === 'sepia') {
+                imageData.data[i] = r * 0.393 + g * 0.769 + b * 0.189;
+                imageData.data[i + 1] = r * 0.349 + g * 0.686 + b * 0.168;
+                imageData.data[i + 2] = r * 0.272 + g * 0.534 + b * 0.131;
+            } else if (currentFilter === 'vibrant') {
+                imageData.data[i] = Math.min(255, r * 1.2);
+                imageData.data[i + 1] = Math.min(255, g * 1.1);
+                imageData.data[i + 2] = Math.min(255, b * 1.2);
+            } else if (currentFilter === 'warm') {
+                imageData.data[i] = Math.min(255, r * 1.1);
+                imageData.data[i + 1] = Math.min(255, g * 0.9);
+                imageData.data[i + 2] = Math.min(255, b * 0.8);
+            } else if (currentFilter === 'cool') {
+                imageData.data[i] = Math.min(255, r * 0.8);
+                imageData.data[i + 1] = Math.min(255, g * 0.9);
+                imageData.data[i + 2] = Math.min(255, b * 1.1);
+            } else if (currentFilter === 'retro') {
+                imageData.data[i] = Math.min(255, r * 0.8 + 40);
+                imageData.data[i + 1] = Math.min(255, g * 0.9);
+                imageData.data[i + 2] = Math.min(255, b * 0.7);
+            } else if (currentFilter === 'dreamy') {
+                imageData.data[i] = Math.min(255, r + 20);
+                imageData.data[i + 1] = Math.min(255, g + 20);
+                imageData.data[i + 2] = Math.min(255, b + 40);
+            } else if (currentFilter === 'invert') {
+                imageData.data[i] = 255 - r;
+                imageData.data[i + 1] = 255 - g;
+                imageData.data[i + 2] = 255 - b;
             }
         }
+        ctx.putImageData(imageData, 0, 0);
 
-        async function loadFaceApiModels() {
-            try {
-                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/');
-                console.log('Mô hình nhận diện đã sẵn sàng');
-            } catch (err) {
-                console.error('Không thể tải mô hình nhận diện khuôn mặt:', err);
-            }
-        }
-
-        Promise.all([loadFaceApiModels()]).then(() => {
-            console.log('Ứng dụng đã sẵn sàng');
-        });
-
-        document.getElementById('snap').addEventListener('click', async () => {
-            if (photos.length >= rowsPerSide * colsPerSide * 2) return;
-
-            ctx.save();
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            ctx.restore();
-
-            if (sticker !== 'none') {
-                const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
-                if (detections.length > 0) {
-                    const face = detections[0].box;
-                    ctx.font = sticker === '🐻' ? '150px Arial' : sticker === '🐰' ? '80px Arial' : '50px Arial';
-                    ctx.fillStyle = 'white';
-                    ctx.textAlign = 'center';
-                    const stickerX = face.x + face.width / 2;
-                    const stickerY = sticker === '🐰' ? face.y - 50 : face.y - 10;
-                    ctx.fillText(sticker, stickerX, stickerY);
-                }
-            }
-
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < imageData.data.length; i += 4) {
-                let r = imageData.data[i];
-                let g = imageData.data[i + 1];
-                let b = imageData.data[i + 2];
-                if (currentFilter === 'grayscale') {
-                    const gray = 0.3 * r + 0.59 * g + 0.11 * b;
-                    imageData.data[i] = imageData.data[i + 1] = imageData.data[i + 2] = gray;
-                } else if (currentFilter === 'sepia') {
-                    imageData.data[i] = r * 0.393 + g * 0.769 + b * 0.189;
-                    imageData.data[i + 1] = r * 0.349 + g * 0.686 + b * 0.168;
-                    imageData.data[i + 2] = r * 0.272 + g * 0.534 + b * 0.131;
-                } else if (currentFilter === 'vibrant') {
-                    imageData.data[i] = Math.min(255, r * 1.2);
-                    imageData.data[i + 1] = Math.min(255, g * 1.1);
-                    imageData.data[i + 2] = Math.min(255, b * 1.2);
-                } else if (currentFilter === 'warm') {
-                    imageData.data[i] = Math.min(255, r * 1.1);
-                    imageData.data[i + 1] = Math.min(255, g * 0.9);
-                    imageData.data[i + 2] = Math.min(255, b * 0.8);
-                } else if (currentFilter === 'cool') {
-                    imageData.data[i] = Math.min(255, r * 0.8);
-                    imageData.data[i + 1] = Math.min(255, g * 0.9);
-                    imageData.data[i + 2] = Math.min(255, b * 1.1);
-                } else if (currentFilter === 'retro') {
-                    imageData.data[i] = Math.min(255, r * 0.8 + 40);
-                    imageData.data[i + 1] = Math.min(255, g * 0.9);
-                    imageData.data[i + 2] = Math.min(255, b * 0.7);
-                } else if (currentFilter === 'dreamy') {
-                    imageData.data[i] = Math.min(255, r + 20);
-                    imageData.data[i + 1] = Math.min(255, g + 20);
-                    imageData.data[i + 2] = Math.min(255, b + 40);
-                } else if (currentFilter === 'invert') {
-                    imageData.data[i] = 255 - r;
-                    imageData.data[i + 1] = 255 - g;
-                    imageData.data[i + 2] = 255 - b;
-                }
-            }
-            ctx.putImageData(imageData, 0, 0);
-
-            photos.push(canvas.toDataURL('image/jpeg', 1.0));
-            updatePhotoStrip();
-            retakeButton.style.display = 'inline-block';
-            if (photos.length >= rowsPerSide * colsPerSide * 2) {
-                document.getElementById('snap').disabled = true;
-                downloadButton.style.display = 'inline-block';
-            }
-        });
-
-        retakeButton.addEventListener('click', () => {
-            if (photos.length > 0) {
-                photos.pop();
-                updatePhotoStrip();
-                document.getElementById('snap').disabled = false;
-                retakeButton.style.display = 'none';
-                downloadButton.style.display = 'none';
-            }
-        });
-
-        document.getElementById('save').addEventListener('click', () => {
-            if (photos.length === 0) return;
-            updatePhotoStrip();
+        // Lưu ảnh với chất lượng cao
+        photos.push(canvas.toDataURL('image/jpeg', 1.0));
+        updatePhotoStrip();
+        retakeButton.style.display = 'inline-block';
+        if (photos.length >= rowsPerSide * colsPerSide * 2) {
+            document.getElementById('snap').disabled = true;
             downloadButton.style.display = 'inline-block';
-        });
+        }
+    });
 
-        downloadButton.addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = 'photobooth-strip.jpg';
-            const currentStrip = getCurrentPhotoStrip();
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const photoWidth = 140;
-            const photoHeight = 100;
-            const borderWidth = 10;
-            const gap = 10; // Khoảng cách giữa hai bên
-            const photoGap = 5; // Khoảng cách giữa các ảnh trong cùng một bên
+    retakeButton.addEventListener('click', () => {
+        if (photos.length > 0) {
+            photos.pop();
+            updatePhotoStrip();
+            document.getElementById('snap').disabled = false;
+            retakeButton.style.display = 'none';
+            downloadButton.style.display = 'none';
+        }
+    });
 
-            // Tính toán chiều cao canvas bao gồm khoảng cách giữa các ảnh
-            canvas.width = (photoWidth * 2) + gap + (borderWidth * 2);
-            canvas.height = (photoHeight * rowsPerSide) + (photoGap * (rowsPerSide - 1)) + (borderWidth * 2);
+    document.getElementById('save').addEventListener('click', () => {
+        if (photos.length === 0) return;
+        updatePhotoStrip();
+        downloadButton.style.display = 'inline-block';
+    });
 
-            ctx.fillStyle = frameColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+    downloadButton.addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = 'photobooth-strip.jpg';
+        const currentStrip = getCurrentPhotoStrip();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const photoWidth = 280; // Tăng kích thước để giữ chất lượng
+        const photoHeight = 200;
+        const borderWidth = 20;
+        const gap = 20; // Khoảng cách giữa hai bên
+        const photoGap = 10; // Khoảng cách giữa các ảnh trong cùng một bên
 
-            photos.forEach((photo, index) => {
-                const img = new Image();
-                img.src = photo;
+        // Tính toán kích thước canvas
+        canvas.width = (photoWidth * 2) + gap + (borderWidth * 2);
+        canvas.height = (photoHeight * rowsPerSide) + (photoGap * (rowsPerSide - 1)) + (borderWidth * 2);
+
+        ctx.fillStyle = frameColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        photos.forEach((photo, index) => {
+            const img = new Image();
+            img.src = photo;
+            img.onload = () => {
                 const side = index < rowsPerSide ? 0 : 1;
                 const row = index % rowsPerSide;
                 const x = side === 0 ? borderWidth : borderWidth + photoWidth + gap;
-                const y = borderWidth + (row * (photoHeight + photoGap)); // Thêm khoảng cách giữa các ảnh
+                const y = borderWidth + (row * (photoHeight + photoGap));
                 ctx.drawImage(img, x, y, photoWidth, photoHeight);
-            });
 
-            link.href = canvas.toDataURL('image/jpeg', 1.0);
-            link.click();
-        });
-
-        resetLayoutButton.addEventListener('click', () => {
-            rowsPerSide = 0;
-            colsPerSide = 1;
-            photos = [];
-            currentLayout = '';
-            layoutSelection.style.display = 'block';
-            mainControls.style.display = 'none';
-            photoStrip4x2.style.display = 'none';
-            photoStrip6x2.style.display = 'none';
-            photoStrip8x2.style.display = 'none';
-            document.getElementById('snap').disabled = true;
-            retakeButton.style.display = 'none';
-            downloadButton.style.display = 'none';
-            resetLayoutButton.style.display = 'none';
-            resetPhotoStrip();
-        });
-
-        function getCurrentPhotoStrip() {
-            if (currentLayout === '4x2') return photoStrip4x2;
-            if (currentLayout === '6x2') return photoStrip6x2;
-            if (currentLayout === '8x2') return photoStrip8x2;
-            return null;
-        }
-
-        function resetPhotoStrip() {
-            const currentStrip = getCurrentPhotoStrip();
-            if (currentStrip) {
-                const leftSide = currentStrip.querySelector('.left-side');
-                const rightSide = currentStrip.querySelector('.right-side');
-                leftSide.innerHTML = '';
-                rightSide.innerHTML = '';
-                const slotsPerSide = rowsPerSide;
-                for (let i = 0; i < slotsPerSide; i++) {
-                    const leftDiv = document.createElement('div');
-                    const rightDiv = document.createElement('div');
-                    leftDiv.textContent = 'Empty';
-                    rightDiv.textContent = 'Empty';
-                    leftSide.appendChild(leftDiv);
-                    rightSide.appendChild(rightDiv);
+                // Kiểm tra nếu đây là ảnh cuối cùng thì tải xuống
+                if (index === photos.length - 1) {
+                    link.href = canvas.toDataURL('image/jpeg', 1.0); // Chất lượng tối đa
+                    link.click();
                 }
-                currentStrip.style.background = frameColor;
-            }
-        }
+            };
+        });
+    });
 
-        function updatePhotoStrip() {
-            const currentStrip = getCurrentPhotoStrip();
-            if (!currentStrip) return;
+    resetLayoutButton.addEventListener('click', () => {
+        rowsPerSide = 0;
+        colsPerSide = 1;
+        photos = [];
+        currentLayout = '';
+        layoutSelection.style.display = 'block';
+        mainControls.style.display = 'none';
+        photoStrip4x2.style.display = 'none';
+        photoStrip6x2.style.display = 'none';
+        photoStrip8x2.style.display = 'none';
+        document.getElementById('snap').disabled = true;
+        retakeButton.style.display = 'none';
+        downloadButton.style.display = 'none';
+        resetLayoutButton.style.display = 'none';
+        resetPhotoStrip();
+    });
 
+    function getCurrentPhotoStrip() {
+        if (currentLayout === '4x2') return photoStrip4x2;
+        if (currentLayout === '6x2') return photoStrip6x2;
+        if (currentLayout === '8x2') return photoStrip8x2;
+        return null;
+    }
+
+    function resetPhotoStrip() {
+        const currentStrip = getCurrentPhotoStrip();
+        if (currentStrip) {
             const leftSide = currentStrip.querySelector('.left-side');
             const rightSide = currentStrip.querySelector('.right-side');
-            const slotsPerSide = rowsPerSide;
-
             leftSide.innerHTML = '';
             rightSide.innerHTML = '';
-
+            const slotsPerSide = rowsPerSide;
             for (let i = 0; i < slotsPerSide; i++) {
                 const leftDiv = document.createElement('div');
-                if (i < photos.length) {
-                    const img = new Image();
-                    img.src = photos[i];
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
-                    leftDiv.appendChild(img);
-                } else {
-                    leftDiv.textContent = 'Empty';
-                }
-                leftSide.appendChild(leftDiv);
-            }
-
-            for (let i = slotsPerSide; i < slotsPerSide * 2; i++) {
                 const rightDiv = document.createElement('div');
-                if (i < photos.length) {
-                    const img = new Image();
-                    img.src = photos[i];
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
-                    rightDiv.appendChild(img);
-                } else {
-                    rightDiv.textContent = 'Empty';
-                }
+                leftDiv.textContent = 'Empty';
+                rightDiv.textContent = 'Empty';
+                leftSide.appendChild(leftDiv);
                 rightSide.appendChild(rightDiv);
             }
-
-            currentStrip.style.borderColor = frameColor;
             currentStrip.style.background = frameColor;
-            currentStrip.classList.add('selected');
-            currentStrip.style.display = 'flex';
         }
+    }
 
-        function setLayout(newRows, newCols) {
-            rowsPerSide = newRows;
-            colsPerSide = 1;
-            currentLayout = `${newRows}x${newCols}`;
-            photos = [];
-            layoutSelection.style.display = 'none';
-            mainControls.style.display = 'block';
-            resetLayoutButton.style.display = 'inline-block';
+    function updatePhotoStrip() {
+        const currentStrip = getCurrentPhotoStrip();
+        if (!currentStrip) return;
 
-            photoStrip4x2.style.display = 'none';
-            photoStrip6x2.style.display = 'none';
-            photoStrip8x2.style.display = 'none';
+        const leftSide = currentStrip.querySelector('.left-side');
+        const rightSide = currentStrip.querySelector('.right-side');
+        const slotsPerSide = rowsPerSide;
 
-            if (currentLayout === '4x2') {
-                photoStrip4x2.style.display = 'flex';
-            } else if (currentLayout === '6x2') {
-                photoStrip6x2.style.display = 'flex';
-            } else if (currentLayout === '8x2') {
-                photoStrip8x2.style.display = 'flex';
+        leftSide.innerHTML = '';
+        rightSide.innerHTML = '';
+
+        for (let i = 0; i < slotsPerSide; i++) {
+            const leftDiv = document.createElement('div');
+            if (i < photos.length) {
+                const img = new Image();
+                img.src = photos[i];
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.style.transform = 'scaleX(-1)'; // Lật lại ảnh để giống khung chụp
+                leftDiv.appendChild(img);
+            } else {
+                leftDiv.textContent = 'Empty';
             }
-
-            document.getElementById('snap').disabled = false;
-            resetPhotoStrip();
-            updatePhotoStrip();
-            updateButtonSelection('layout-btn', `${newRows}x${newCols}`);
+            leftSide.appendChild(leftDiv);
         }
 
-        function setFilter(filter) {
-            currentFilter = filter;
-            updateButtonSelection('filter-btn', filter);
+        for (let i = slotsPerSide; i < slotsPerSide * 2; i++) {
+            const rightDiv = document.createElement('div');
+            if (i < photos.length) {
+                const img = new Image();
+                img.src = photos[i];
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.style.transform = 'scaleX(-1)'; // Lật lại ảnh để giống khung chụp
+                rightDiv.appendChild(img);
+            } else {
+                rightDiv.textContent = 'Empty';
+            }
+            rightSide.appendChild(rightDiv);
         }
 
-        function setFrameColor(color) {
-            frameColor = color;
-            updatePhotoStrip();
-            updateButtonSelection('frame-color', color);
+        currentStrip.style.borderColor = frameColor;
+        currentStrip.style.background = frameColor;
+        currentStrip.classList.add('selected');
+        currentStrip.style.display = 'flex';
+    }
+
+    function setLayout(newRows, newCols) {
+        rowsPerSide = newRows;
+        colsPerSide = 1;
+        currentLayout = `${newRows}x${newCols}`;
+        photos = [];
+        layoutSelection.style.display = 'none';
+        mainControls.style.display = 'block';
+        resetLayoutButton.style.display = 'inline-block';
+
+        photoStrip4x2.style.display = 'none';
+        photoStrip6x2.style.display = 'none';
+        photoStrip8x2.style.display = 'none';
+
+        if (currentLayout === '4x2') {
+            photoStrip4x2.style.display = 'flex';
+        } else if (currentLayout === '6x2') {
+            photoStrip6x2.style.display = 'flex';
+        } else if (currentLayout === '8x2') {
+            photoStrip8x2.style.display = 'flex';
         }
 
-        function setSticker(stickerType) {
-            sticker = stickerType;
-            updateButtonSelection('sticker-btn', stickerType);
-        }
+        document.getElementById('snap').disabled = false;
+        resetPhotoStrip();
+        updatePhotoStrip();
+        updateButtonSelection('layout-btn', `${newRows}x${newCols}`);
+    }
 
-        function updateButtonSelection(className, value) {
-            document.querySelectorAll(`.${className}`).forEach(btn => {
-                btn.classList.remove('selected');
-                if (btn.getAttribute('onclick').includes(value)) {
-                    btn.classList.add('selected');
-                }
-            });
-        }
+    function setFilter(filter) {
+        currentFilter = filter;
+        updateButtonSelection('filter-btn', filter);
+    }
 
-        if (/Mobi|Android|iPhone|iPad/.test(navigator.userAgent)) {
-            document.body.style.padding = '5px';
-            document.querySelectorAll('button').forEach(btn => {
-                btn.style.width = 'auto';
-                btn.style.minWidth = '60px';
-            });
-        }
-    </script>
-</body>
-</html>
+    function setFrameColor(color) {
+        frameColor = color;
+        updatePhotoStrip();
+        updateButtonSelection('frame-color', color);
+    }
+
+    function setSticker(stickerType) {
+        sticker = stickerType;
+        updateButtonSelection('sticker-btn', stickerType);
+    }
+
+    function updateButtonSelection(className, value) {
+        document.querySelectorAll(`.${className}`).forEach(btn => {
+            btn.classList.remove('selected');
+            if (btn.getAttribute('onclick').includes(value)) {
+                btn.classList.add('selected');
+            }
+        });
+    }
+
+    if (/Mobi|Android|iPhone|iPad/.test(navigator.userAgent)) {
+        document.body.style.padding = '5px';
+        document.querySelectorAll('button').forEach(btn => {
+            btn.style.width = 'auto';
+            btn.style.minWidth = '60px';
+        });
+    }
+</script>
