@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thư viện Video của Tôi</title>
     <style>
-        /* --- CÀI ĐẶT CHUNG & ẢNH NỀN --- */
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-image: url('IMG_2486.jpg'); /* Giữ ảnh nền cũ của bạn */
+            /* SỬA LỖI: Cập nhật đúng tên ảnh nền của bạn */
+            background-image: url('IMG_2486.jpg'); 
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -25,45 +25,41 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         }
 
-        /* --- LƯỚI VIDEO (Giao diện giống iPhone) --- */
         .video-gallery {
             display: grid;
-            /* Tạo các cột tự động lấp đầy, mỗi cột rộng tối thiểu 150px */
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px; /* Khoảng cách giữa các video */
+            gap: 15px;
             margin-top: 30px;
         }
 
         .video-item video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Đảm bảo video lấp đầy ô, cắt bớt phần thừa */
+            object-fit: cover;
             cursor: pointer;
             border-radius: 8px;
             transition: transform 0.2s ease;
         }
 
         .video-item video:hover {
-            transform: scale(1.05); /* Hiệu ứng phóng to nhẹ khi di chuột vào */
+            transform: scale(1.05);
         }
 
-        /* --- LIGHTBOX (Cửa sổ phát video khi nhấp vào) --- */
         .lightbox {
-            display: none; /* Mặc định ẩn đi */
-            position: fixed; /* Hiện đè lên mọi thứ */
+            display: none;
+            position: fixed;
             z-index: 999;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.85); /* Nền đen mờ */
-            display: flex;
+            background-color: rgba(0, 0, 0, 0.85);
             justify-content: center;
             align-items: center;
         }
 
         .lightbox.active {
-            display: flex; /* Hiện lightbox lên */
+            display: flex;
         }
 
         .lightbox-content {
@@ -75,7 +71,7 @@
         .lightbox-content video {
             width: 100%;
             height: 100%;
-            max-height: 80vh; /* Chiều cao tối đa bằng 80% chiều cao màn hình */
+            max-height: 80vh;
         }
         
         .close-button {
@@ -103,18 +99,9 @@
                 <video src="video2.mp4"></video>
             </div>
             <div class="video-item">
-                <video src="video3.mp4"></video>
+                <video src="video3.MP4"></video>
             </div>
-            <div class="video-item">
-                <video src="video4.mp4"></video>
-            </div>
-            <div class="video-item">
-                <video src="video5.mp4"></video>
-            </div>
-            <div class="video-item">
-                <video src="video6.mp4"></video>
-            </div>
-            </div>
+        </div>
     </div>
 
     <div id="lightbox" class="lightbox">
@@ -124,36 +111,29 @@
         </div>
     </div>
 
-
     <script>
-        // --- JAVASCRIPT ĐỂ ĐIỀU KHIỂN LIGHTBOX ---
         const galleryVideos = document.querySelectorAll('.video-item video');
         const lightbox = document.getElementById('lightbox');
         const lightboxVideo = document.getElementById('lightbox-video');
         const closeBtn = document.getElementById('close-btn');
 
-        // Khi nhấp vào một video trong lưới
         galleryVideos.forEach(video => {
             video.addEventListener('click', () => {
                 lightbox.classList.add('active');
-                lightboxVideo.src = video.src; // Lấy nguồn của video được nhấp
+                lightboxVideo.src = video.src;
             });
         });
 
-        // Khi nhấp vào nút đóng (X)
-        closeBtn.addEventListener('click', () => {
+        function closeLightbox() {
             lightbox.classList.remove('active');
-            lightboxVideo.pause(); // Dừng video
-            lightboxVideo.src = ""; // Xóa nguồn để dừng tải
-        });
+            lightboxVideo.pause();
+            lightboxVideo.src = "";
+        }
 
-        // Cũng có thể đóng khi nhấp vào nền đen
+        closeBtn.addEventListener('click', closeLightbox);
         lightbox.addEventListener('click', (e) => {
-            // Chỉ đóng nếu người dùng nhấp vào chính nền đen (không phải video)
             if (e.target === lightbox) {
-                lightbox.classList.remove('active');
-                lightboxVideo.pause();
-                lightboxVideo.src = "";
+                closeLightbox();
             }
         });
     </script>
