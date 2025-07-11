@@ -3,50 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang Web của Tôi</title>
+    <title>Thư viện Video của Tôi</title>
     <style>
+        /* --- CÀI ĐẶT CHUNG & ẢNH NỀN --- */
         body {
-            /* Thay 'ten-anh-nen.jpg' bằng tên tệp ảnh của bạn */
-            background-image: url('IMG_2486.jpg');
-            background-size: cover; /* Giúp ảnh nền che phủ toàn bộ trang */
-            background-position: center; /* Căn giữa ảnh nền */
-            background-repeat: no-repeat; /* Không lặp lại ảnh nền */
-            background-attachment: fixed; /* Giữ ảnh nền cố định khi cuộn trang */
-            color: white; /* Đổi màu chữ thành trắng để dễ đọc trên nền tối */
-            font-family: sans-serif;
-            text-align: center;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-image: url('IMG_2486.jpg'); /* Giữ ảnh nền cũ của bạn */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white;
+        }
+
+        .content-wrapper {
             padding: 20px;
+            text-align: center;
         }
 
-        h1 {
-            font-size: 3em;
-            text-shadow: 2px 2px 4px #000000;
+        h1, h2 {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         }
 
-        .video-container {
+        /* --- LƯỚI VIDEO (Giao diện giống iPhone) --- */
+        .video-gallery {
+            display: grid;
+            /* Tạo các cột tự động lấp đầy, mỗi cột rộng tối thiểu 150px */
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px; /* Khoảng cách giữa các video */
             margin-top: 30px;
         }
 
-        video {
-            max-width: 100%;
-            height: auto;
-            border: 3px solid white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        .video-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Đảm bảo video lấp đầy ô, cắt bớt phần thừa */
+            cursor: pointer;
+            border-radius: 8px;
+            transition: transform 0.2s ease;
+        }
+
+        .video-item video:hover {
+            transform: scale(1.05); /* Hiệu ứng phóng to nhẹ khi di chuột vào */
+        }
+
+        /* --- LIGHTBOX (Cửa sổ phát video khi nhấp vào) --- */
+        .lightbox {
+            display: none; /* Mặc định ẩn đi */
+            position: fixed; /* Hiện đè lên mọi thứ */
+            z-index: 999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* Nền đen mờ */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lightbox.active {
+            display: flex; /* Hiện lightbox lên */
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 80%;
+        }
+
+        .lightbox-content video {
+            width: 100%;
+            height: 100%;
+            max-height: 80vh; /* Chiều cao tối đa bằng 80% chiều cao màn hình */
+        }
+        
+        .close-button {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <h1>Chào mừng đến với trang web của tôi!</h1>
-    <p>Đây là trang web có ảnh nền và video được lưu trữ trên GitHub.</p>
+    <div class="content-wrapper">
+        <h1>Thư viện Video</h1>
+        <h2>Nhấp vào một video để xem</h2>
 
-    <div class="video-container">
-        <h2>Xem video của tôi</h2>
-        <video controls>
-            <source src="iLoveYt.net_YouTube_Nightcore-PLAY-x-Unity-x-Faded-Alan-Walk_Media_QdNT6a49AxY_002_720p.mp4" type="video/mp4">
-            Trình duyệt của bạn không hỗ trợ thẻ video.
-        </video>
+        <div class="video-gallery">
+            <div class="video-item">
+                <video src="video1.mp4"></video>
+            </div>
+            <div class="video-item">
+                <video src="video2.mp4"></video>
+            </div>
+            <div class="video-item">
+                <video src="video3.mp4"></video>
+            </div>
+            <div class="video-item">
+                <video src="video4.mp4"></video>
+            </div>
+            <div class="video-item">
+                <video src="video5.mp4"></video>
+            </div>
+            <div class="video-item">
+                <video src="video6.mp4"></video>
+            </div>
+            </div>
     </div>
+
+    <div id="lightbox" class="lightbox">
+        <div class="lightbox-content">
+            <span id="close-btn" class="close-button">&times;</span>
+            <video id="lightbox-video" controls autoplay></video>
+        </div>
+    </div>
+
+
+    <script>
+        // --- JAVASCRIPT ĐỂ ĐIỀU KHIỂN LIGHTBOX ---
+        const galleryVideos = document.querySelectorAll('.video-item video');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxVideo = document.getElementById('lightbox-video');
+        const closeBtn = document.getElementById('close-btn');
+
+        // Khi nhấp vào một video trong lưới
+        galleryVideos.forEach(video => {
+            video.addEventListener('click', () => {
+                lightbox.classList.add('active');
+                lightboxVideo.src = video.src; // Lấy nguồn của video được nhấp
+            });
+        });
+
+        // Khi nhấp vào nút đóng (X)
+        closeBtn.addEventListener('click', () => {
+            lightbox.classList.remove('active');
+            lightboxVideo.pause(); // Dừng video
+            lightboxVideo.src = ""; // Xóa nguồn để dừng tải
+        });
+
+        // Cũng có thể đóng khi nhấp vào nền đen
+        lightbox.addEventListener('click', (e) => {
+            // Chỉ đóng nếu người dùng nhấp vào chính nền đen (không phải video)
+            if (e.target === lightbox) {
+                lightbox.classList.remove('active');
+                lightboxVideo.pause();
+                lightboxVideo.src = "";
+            }
+        });
+    </script>
 
 </body>
 </html>
