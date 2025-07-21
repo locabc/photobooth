@@ -1,3 +1,5 @@
+Chắc chắn rồi. Dưới đây là mã nguồn HTML đầy đủ trong một tệp duy nhất, đã bao gồm tất cả các sửa lỗi về cấu trúc, thuộc tính video và CSS để hoạt động chính xác trên cả máy tính và điện thoại.
+Bạn chỉ cần sao chép toàn bộ mã này và dán vào tệp index.html của mình.
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -8,8 +10,7 @@
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            /* SỬA LỖI: Cập nhật đúng tên ảnh nền của bạn */
-            background-image: url('IMG_2486.jpg'); 
+            background-image: url('IMG_2486.jpg'); /* <-- Cập nhật đúng tên ảnh nền của bạn */
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -27,9 +28,17 @@
 
         .video-gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
             margin-top: 30px;
+        }
+
+        /* ✅ SỬA LỖI: Đảm bảo video có không gian hiển thị ổn định */
+        .video-item {
+            aspect-ratio: 16 / 9; /* Giữ tỷ lệ khung hình, có thể đổi thành 1 / 1 cho vuông */
+            background-color: #333; /* Màu nền tạm thời khi video đang tải */
+            border-radius: 8px;
+            overflow: hidden; /* Ẩn phần video thừa nếu tỷ lệ không khớp */
         }
 
         .video-item video {
@@ -37,7 +46,6 @@
             height: 100%;
             object-fit: cover;
             cursor: pointer;
-            border-radius: 8px;
             transition: transform 0.2s ease;
         }
 
@@ -90,35 +98,33 @@
     <div class="content-wrapper">
         <h1>Thư viện Video</h1>
         <h2>Nhấp vào một video để xem</h2>
-        <div class="video-item">
-            <video src="video1.mp4" poster="path/to/video1_thumbnail.jpg"></video>
-        </div>
+        
         <div class="video-gallery">
             <div class="video-item">
-                <video src="video1.mp4"></video>
+                <video src="video1.mp4" poster="path/to/thumbnail1.jpg" muted playsinline preload="metadata"></video>
             </div>
             <div class="video-item">
-                <video src="video2.mp4"></video>
+                <video src="video2.mp4" poster="path/to/thumbnail2.jpg" muted playsinline preload="metadata"></video>
             </div>
             <div class="video-item">
-                <video src="video3.MP4"></video>
+                <video src="video3.mp4" poster="path/to/thumbnail3.jpg" muted playsinline preload="metadata"></video>
             </div>
             <div class="video-item">
-                <video src="video4.mp4"></video>
+                <video src="video4.mp4" poster="path/to/thumbnail4.jpg" muted playsinline preload="metadata"></video>
             </div>
             <div class="video-item">
-                <video src="video5.mp4"></video>
+                <video src="video5.mp4" poster="path/to/thumbnail5.jpg" muted playsinline preload="metadata"></video>
             </div>
             <div class="video-item">
-                <video src="video6.mp4"></video>
+                <video src="video6.mp4" poster="path/to/thumbnail6.jpg" muted playsinline preload="metadata"></video>
             </div>
             <div class="video-item">
-                <video src="video7.mp4"></video>
+                <video src="video7.mp4" poster="path/to/thumbnail7.jpg" muted playsinline preload="metadata"></video>
             </div>
             <div class="video-item">
-                <video src="video8.mp4"></video>
+                <video src="video8.mp4" poster="path/to/thumbnail8.jpg" muted playsinline preload="metadata"></video>
             </div>
-        </div>
+            </div>
     </div>
 
     <div id="lightbox" class="lightbox">
@@ -144,10 +150,12 @@
         function closeLightbox() {
             lightbox.classList.remove('active');
             lightboxVideo.pause();
-            lightboxVideo.src = "";
+            lightboxVideo.src = ""; // Xóa src để dừng tải
         }
 
         closeBtn.addEventListener('click', closeLightbox);
+
+        // Đóng khi nhấp ra ngoài video
         lightbox.addEventListener('click', (e) => {
             if (e.target === lightbox) {
                 closeLightbox();
@@ -157,3 +165,4 @@
 
 </body>
 </html>
+
