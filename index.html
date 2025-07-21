@@ -91,38 +91,51 @@
     </style>
 </head>
 <body>
-
+    
     <div class="content-wrapper">
-        <h1>Thư viện Video</h1>
-        <h2>Nhấp vào một video để xem</h2>
-        
-        <div class="video-gallery">
-            <div class="video-item">
-                <video src="video1.mp4" ></video></video>
-            </div>
-            <div class="video-item">
-                <video src="video2.mp4" ></video>
-            </div>
-            <div class="video-item">
-                <video src="video3.mp4" ></video>
-            </div>
-            <div class="video-item">
-                <video src="video4.mp4" ></video>
-            </div>
-            <div class="video-item">
-                <video src="video5.mp4" ></video>
-            </div>
-            <div class="video-item">
-                <video src="video6.mp4" ></video>
-            </div>
-            <div class="video-item">
-                <video src="video7.mp4" ></video>
-            </div>
-            <div class="video-item">
-                <video src="video8.mp4" ></video>
-            </div>
-            </div>
+    <h1>Thư viện Video</h1>
+    <h2>Nhấp vào một video để xem</h2>
+
+    <div class="video-gallery">
+        <div class="video-item">
+            <video src="video1.mp4" controls></video>
+        </div>
+        <div class="video-item">
+            <video src="video2.mp4" controls></video>
+        </div>
+        <div class="video-item">
+            <video src="video3.mp4" controls></video>
+        </div>
+        <div class="video-item">
+            <video src="video4.mp4" controls></video>
+        </div>
+        <div class="video-item">
+            <video src="video5.mp4" controls></video>
+        </div>
+        <div class="video-item">
+            <video src="video6.mp4" controls></video>
+        </div>
+        <div class="video-item">
+            <video src="video7.mp4" controls></video>
+        </div>
+        <div class="video-item">
+            <video src="video8.mp4" controls></video>
+        </div>
     </div>
+</div>
+
+<style>
+.video-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.video-item video {
+    width: 300px;
+    height: auto;
+    border-radius: 8px;
+}
+</style>
 
     <div id="lightbox" class="lightbox">
         <div class="lightbox-content">
